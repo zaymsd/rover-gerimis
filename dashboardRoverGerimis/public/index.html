@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rover G.E.R.I.M.I.S Dashboard</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #1e1e2e; 
+            color: #cdd6f4; 
+            text-align: center; 
+            padding-top: 30px; 
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .card { 
+            background: #313244; 
+            padding: 30px; 
+            border-radius: 12px; 
+            width: 200px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .card h3 { margin-top: 0; color: #a6adc8; font-size: 1.1em; text-transform: uppercase; letter-spacing: 1px; }
+        .value { font-size: 2.8em; font-weight: bold; color: #89b4fa; margin-top: 15px; }
+        .status-text { color: #89dceb; font-size: 2em; }
+        
+        #ui-kelas, #ui-jarak { transition: color 0.3s ease; }
+    </style>
+</head>
+<body>
+
+    <h1>Pemantauan Lingkungan & Radar Telemetri</h1>
+    <p style="color: #a6adc8;">Rover G.E.R.I.M.I.S - Live via WebSockets</p>
+
+    <div class="container">
+        <div class="card">
+            <h3>Suhu Ruang</h3>
+            <div class="value"><span id="ui-suhu">--</span>°C</div>
+        </div>
+
+        <div class="card">
+            <h3>Kelembapan</h3>
+            <div class="value"><span id="ui-kelembapan">--</span>%</div>
+        </div>
+
+        <div class="card">
+            <h3>Status Cuaca</h3>
+            <div class="value status-text" id="ui-status">Memuat...</div>
+        </div>
+
+        <div class="card" style="border: 2px solid #cba6f7;">
+            <h3>Analisis Edge AI</h3>
+            <div class="value" style="font-size: 2em;"><span id="ui-kelas" style="color: #cdd6f4;">Menunggu...</span></div>
+            <p style="color: #a6adc8; font-size: 0.85em; margin-top: 10px;">(Klasifikasi KNN Native)</p>
+        </div>
+
+        <div class="card" style="border: 2px solid #fab387;">
+            <h3>Radar Halangan</h3>
+            <div class="value"><span id="ui-jarak" style="color: #fab387;">--</span><span style="font-size: 0.5em; color: #a6adc8;"> cm</span></div>
+            <p style="color: #a6adc8; font-size: 0.85em; margin-top: 10px;">(Sensor Ultrasonik Depan)</p>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <script>
+        const socket = io();
+
+        socket.on('sensorData', (data) => {
+            
+            if (data.topik_mqtt === 'gerimis/suhu') {
+                document.getElementById('ui-suhu').innerText = data.nilai_sensor;
+            } 
+            else if (data.topik_mqtt === 'gerimis/kelembapan') {
+                document.getElementById('ui-kelembapan').innerText = data.nilai_sensor;
+            } 
+            else if (data.topik_mqtt === 'gerimis/status') {
+                const elStatus = document.getElementById('ui-status');
+                elStatus.innerText = data.nilai_sensor;
+                elStatus.style.color = (data.nilai_sensor !== 'Kering') ? '#89b4fa' : '#a6adc8';
+            }
+            else if (data.topik_mqtt === 'gerimis/kelas_suhu') {
+                const elKelas = document.getElementById('ui-kelas');
+                elKelas.innerText = data.nilai_sensor;
+
+                if (data.nilai_sensor === 'Normal') elKelas.style.color = '#a6e3a1'; 
+                else if (data.nilai_sensor === 'Peringatan') elKelas.style.color = '#f9e2af'; 
+                else if (data.nilai_sensor === 'Kritis' || data.nilai_sensor === 'Sensor ERR') elKelas.style.color = '#f38ba8'; 
+                else elKelas.style.color = '#cdd6f4'; 
+            }
+            // [BARU] Logika Radar Jarak Visual
+            else if (data.topik_mqtt === 'gerimis/jarak') {
+                const elJarak = document.getElementById('ui-jarak');
+                const jarakInt = parseInt(data.nilai_sensor);
+                
+                if (jarakInt === 999) {
+                    elJarak.innerText = "Aman";
+                    elJarak.style.color = '#a6e3a1'; // Hijau jika jalanan kosong (999)
+                } else {
+                    elJarak.innerText = jarakInt;
+                    // Ubah jadi merah jika jarak <= 20cm (kondisi bahaya/rem otomatis)
+                    if (jarakInt <= 20) {
+                        elJarak.style.color = '#f38ba8'; 
+                    } else {
+                        elJarak.style.color = '#fab387'; 
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
