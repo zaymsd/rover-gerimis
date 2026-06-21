@@ -31,7 +31,7 @@ db.connect((err) => {
 // ==========================================
 // 2. KONFIGURASI MQTT BROKER (SHIFTR.IO)
 // ==========================================
-const mqttUrl = 'mqtt://gerimis:BcnEhZ4zYstEKsOf@gerimis.cloud.shiftr.io';
+const mqttUrl = 'mqtt://gerimisaja:qyWmH5h5nWhS0NVE@gerimisaja.cloud.shiftr.io';
 const mqttClient = mqtt.connect(mqttUrl);
 
 // Buffer Objek untuk mencegah Race Condition Asynchronous

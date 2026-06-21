@@ -1,125 +1,343 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="h-full bg-slate-950">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rover G.E.R.I.M.I.S Dashboard</title>
-    <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #1e1e2e; 
-            color: #cdd6f4; 
-            text-align: center; 
-            padding-top: 30px; 
-        }
-        .container {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-top: 30px;
-            max-width: 1200px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .card { 
-            background: #313244; 
-            padding: 30px; 
-            border-radius: 12px; 
-            width: 200px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            transition: transform 0.2s;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        .card h3 { margin-top: 0; color: #a6adc8; font-size: 1.1em; text-transform: uppercase; letter-spacing: 1px; }
-        .value { font-size: 2.8em; font-weight: bold; color: #89b4fa; margin-top: 15px; }
-        .status-text { color: #89dceb; font-size: 2em; }
-        
-        #ui-kelas, #ui-jarak { transition: color 0.3s ease; }
-    </style>
+    <title>Rover G.E.R.I.M.I.S - Mission Control</title>
+    <link rel="stylesheet" href="/output.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
+<body class="h-full text-slate-100 font-sans antialiased selection:bg-indigo-500 selection:text-white">
 
-    <h1>Pemantauan Lingkungan & Radar Telemetri</h1>
-    <p style="color: #a6adc8;">Rover G.E.R.I.M.I.S - Live via WebSockets</p>
+    <div class="min-h-full flex flex-col">
+        <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur px-6 py-4 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <div>
+                        <h1 class="text-xl font-bold tracking-wider text-transparent bg-clip-text bg-linear-to-r from-indigo-400 via-sky-400 to-emerald-400 uppercase">
+                            Rover G.E.R.I.M.I.S
+                        </h1>
+                        <p class="text-xs text-slate-400">Sistem Kendali & Monitoring Mikro-Iklim Real-time</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 text-xs font-mono bg-slate-950 px-4 py-2 rounded-lg border border-slate-800">
+                    <span class="text-slate-500">KONEKSI:</span>
+                    <span id="ui-net-status" class="text-emerald-400 font-bold">WEBSOCKET LIVE</span>
+                </div>
+            </div>
+        </header>
 
-    <div class="container">
-        <div class="card">
-            <h3>Suhu Ruang</h3>
-            <div class="value"><span id="ui-suhu">--</span>°C</div>
-        </div>
+        <main class="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <div class="lg:col-span-1 flex flex-col gap-6">
+                
+                <div id="radar-card" class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col items-center justify-between relative overflow-hidden radar-panel-glow min-h-65 transition-all duration-300">
+                    <div class="w-full flex justify-between items-center mb-1">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 font-mono">Radar Deteksi</span>
+                        <span id="badge-jarak" class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Clear</span>
+                    </div>
 
-        <div class="card">
-            <h3>Kelembapan</h3>
-            <div class="value"><span id="ui-kelembapan">--</span>%</div>
-        </div>
+                    <div class="relative w-full flex items-center justify-center h-48 mt-2">
+                        <canvas id="radarCanvas" class="w-full h-full"></canvas>
+                    </div>
 
-        <div class="card">
-            <h3>Status Cuaca</h3>
-            <div class="value status-text" id="ui-status">Memuat...</div>
-        </div>
+                    <div class="text-center mt-2 w-full border-t border-slate-800/60 pt-2 flex justify-around items-center">
+                        <div>
+                            <p class="text-[10px] text-slate-500 uppercase tracking-widest">Jarak Objek</p>
+                            <p class="text-xl font-black text-slate-200 font-mono"><span id="ui-jarak">--</span> <span class="text-xs font-normal text-slate-400">cm</span></p>
+                        </div>
+                        <div class="h-6 w-px bg-slate-800"></div>
+                        <div>
+                            <p class="text-[10px] text-slate-500 uppercase tracking-widest">Posisi Unit</p>
+                            <p class="text-sm font-bold text-emerald-400 font-mono">CENTER</p>
+                        </div>
+                    </div>
+                </div>
 
-        <div class="card" style="border: 2px solid #cba6f7;">
-            <h3>Analisis Edge AI</h3>
-            <div class="value" style="font-size: 2em;"><span id="ui-kelas" style="color: #cdd6f4;">Menunggu...</span></div>
-            <p style="color: #a6adc8; font-size: 0.85em; margin-top: 10px;">(Klasifikasi KNN Native)</p>
-        </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 relative overflow-hidden">
+                    <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Analisis Edge AI</div>
+                    <div class="flex items-center justify-between bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
+                        <div>
+                            <div id="ui-kelas" class="text-2xl font-bold tracking-wide text-slate-300">Menunggu...</div>
+                            <p class="text-xs text-slate-500 mt-1">Klasifikasi Klaster Suhu</p>
+                        </div>
+                        <div id="ai-indicator" class="h-10 w-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-lg text-slate-400 transition-all duration-300">AI</div>
+                    </div>
+                </div>
 
-        <div class="card" style="border: 2px solid #fab387;">
-            <h3>Radar Halangan</h3>
-            <div class="value"><span id="ui-jarak" style="color: #fab387;">--</span><span style="font-size: 0.5em; color: #a6adc8;"> cm</span></div>
-            <p style="color: #a6adc8; font-size: 0.85em; margin-top: 10px;">(Sensor Ultrasonik Depan)</p>
-        </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 relative overflow-hidden">
+                    <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Kondisi Cuaca</div>
+                    <div class="flex items-center justify-between bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
+                        <div>
+                            <div id="ui-status" class="text-2xl font-bold tracking-wide text-sky-400">Memuat...</div>
+                            <p class="text-xs text-slate-500 mt-1">Status Sensor Hujan</p>
+                        </div>
+                        <div id="weather-icon" class="text-3xl">⏳</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="lg:col-span-2 flex flex-col gap-6">
+                
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col h-80">
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Suhu Ruang</div>
+                        <span id="badge-suhu" class="text-sm font-mono font-bold text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded-md border border-rose-500/20">--°C</span>
+                    </div>
+                    <div class="flex-1 relative w-full h-full">
+                        <canvas id="chartSuhu"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col h-86">
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Kelembapan (RH)</div>
+                        <span id="badge-kelembapan" class="text-sm font-mono font-bold text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-md border border-indigo-500/20">--%</span>
+                    </div>
+                    <div class="flex-1 relative w-full h-full">
+                        <canvas id="chartKelembapan"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+        </main>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    
     <script>
         const socket = io();
 
-        socket.on('sensorData', (data) => {
-            
-            if (data.topik_mqtt === 'gerimis/suhu') {
-                document.getElementById('ui-suhu').innerText = data.nilai_sensor;
-            } 
-            else if (data.topik_mqtt === 'gerimis/kelembapan') {
-                document.getElementById('ui-kelembapan').innerText = data.nilai_sensor;
-            } 
-            else if (data.topik_mqtt === 'gerimis/status') {
-                const elStatus = document.getElementById('ui-status');
-                elStatus.innerText = data.nilai_sensor;
-                elStatus.style.color = (data.nilai_sensor !== 'Kering') ? '#89b4fa' : '#a6adc8';
-            }
-            else if (data.topik_mqtt === 'gerimis/kelas_suhu') {
-                const elKelas = document.getElementById('ui-kelas');
-                elKelas.innerText = data.nilai_sensor;
+        // ====================================================
+        // 🟢 ENGINE GRAFIS RADAR MEKANIS MILITER 360°
+        // ====================================================
+        const canvas = document.getElementById('radarCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let currentJarak = 999; 
+        let sweepAngle = 0; // Berputar kontinu memutari lingkaran penuh
 
-                if (data.nilai_sensor === 'Normal') elKelas.style.color = '#a6e3a1'; 
-                else if (data.nilai_sensor === 'Peringatan') elKelas.style.color = '#f9e2af'; 
-                else if (data.nilai_sensor === 'Kritis' || data.nilai_sensor === 'Sensor ERR') elKelas.style.color = '#f38ba8'; 
-                else elKelas.style.color = '#cdd6f4'; 
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function drawRadar360() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Titik pusat presisi di tengah canvas
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const maxRadius = Math.min(canvas.width, canvas.height) / 2 - 12;
+
+            // Tema warna dinamis (berubah merah jika menabrak halangan)
+            const baseColor = currentJarak <= 20 ? 'rgba(244, 63, 94, ' : 'rgba(16, 185, 129, ';
+
+            // 1. Gambar Ring Grid Konsentris Lingkaran (Batas Jarak Sonar)
+            ctx.lineWidth = 1;
+            for (let r = 1; r <= 4; r++) {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, (maxRadius / 4) * r, 0, 2 * Math.PI);
+                ctx.strokeStyle = baseColor + '0.12)';
+                ctx.stroke();
             }
-            // [BARU] Logika Radar Jarak Visual
-            else if (data.topik_mqtt === 'gerimis/jarak') {
+
+            // 2. Gambar Garis Silang Pembagi Sektor Mata Angin (Crosshair)
+            ctx.strokeStyle = baseColor + '0.2)';
+            
+            // Garis Vertikal (Y)
+            ctx.beginPath(); ctx.moveTo(centerX, centerY - maxRadius); ctx.lineTo(centerX, centerY + maxRadius); ctx.stroke();
+            // Garis Horizontal (X)
+            ctx.beginPath(); ctx.moveTo(centerX - maxRadius, centerY); ctx.lineTo(centerX + maxRadius, centerY); ctx.stroke();
+
+            // 3. Tambah Garis Diagonal & Teks Derajat Taktis (0°, 90°, 180°, 270°)
+            ctx.font = '9px monospace';
+            ctx.fillStyle = baseColor + '0.5)';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            ctx.fillText("0°", centerX, centerY - maxRadius - 6);
+            ctx.fillText("180°", centerX, centerY + maxRadius + 6);
+            ctx.fillText("270°", centerX - maxRadius - 10, centerY);
+            ctx.fillText("90°", centerX + maxRadius + 10, centerY);
+
+            // 4. Gambar Titik Pusat Kedudukan Unit Rover
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 4, 0, 2 * Math.PI);
+            ctx.fillStyle = currentJarak <= 20 ? '#f43f5e' : '#10b981';
+            ctx.fill();
+
+            // 5. Update & Animasi Jarum Sapuan Penyapu (360° Sweep Line)
+            sweepAngle += 0.025; // Kecepatan rotasi jarum
+            if (sweepAngle >= 2 * Math.PI) sweepAngle = 0;
+
+            const sweepX = centerX + Math.cos(sweepAngle) * maxRadius;
+            const sweepY = centerY + Math.sin(sweepAngle) * maxRadius;
+
+            // Efek Pancaran Sinar Utama Jarum
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(sweepX, sweepY);
+            ctx.strokeStyle = baseColor + '0.8)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Efek Gradasi Pendaran Ekor Jarum Belakang (Fade Tail)
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, maxRadius, sweepAngle, sweepAngle - 0.4, true);
+            ctx.lineTo(centerX, centerY);
+            ctx.fillStyle = baseColor + '0.04)';
+            ctx.fill();
+
+            // 6. Plot Titik Merah Objek Berdasarkan Data Riil Jarak
+            // Mengasumsikan sensor menghadap ke depan (sekitar sudut sapuan saat ini untuk efek visualisasi real-time)
+            if (currentJarak > 0 && currentJarak <= 80) {
+                const rasioJarak = currentJarak / 80; // Skala maksimal pembacaan radar dashboard = 80 cm
+                const targetRadius = rasioJarak * maxRadius;
+
+                // Memetakan posisi target relatif terhadap sudut sapuan sensor ke depan
+                const objX = centerX + Math.cos(sweepAngle) * targetRadius;
+                const objY = centerY + Math.sin(sweepAngle) * targetRadius;
+
+                // Efek Glow Titik Target Objek
+                ctx.beginPath(); ctx.arc(objX, objY, 7, 0, 2 * Math.PI);
+                ctx.fillStyle = 'rgba(244, 63, 94, 0.5)'; ctx.fill();
+
+                ctx.beginPath(); ctx.arc(objX, objY, 3.5, 0, 2 * Math.PI);
+                ctx.fillStyle = '#f43f5e'; ctx.fill();
+            }
+
+            requestAnimationFrame(drawRadar360);
+        }
+        // Jalankan loop render animasi
+        requestAnimationFrame(drawRadar360);
+
+
+        // ====================================================
+        // 📊 CONFIG CHART (SUHU & KELEMBAPAN)
+        // ====================================================
+        const maxDataPoints = 15;
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font: { family: 'monospace' } } },
+                y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font: { family: 'monospace' } } }
+            },
+            plugins: { legend: { display: false } },
+            animation: { duration: 200 }
+        };
+
+        const ctxSuhu = document.getElementById('chartSuhu').getContext('2d');
+        const chartSuhu = new Chart(ctxSuhu, {
+            type: 'line',
+            data: { labels: [], datasets: [{ data: [], borderColor: '#f43f5e', backgroundColor: 'rgba(244, 63, 94, 0.08)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 2 }] },
+            options: commonOptions
+        });
+
+        const ctxKelembapan = document.getElementById('chartKelembapan').getContext('2d');
+        const chartKelembapan = new Chart(ctxKelembapan, {
+            type: 'line',
+            data: { labels: [], datasets: [{ data: [], borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.08)', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 2 }] },
+            options: commonOptions
+        });
+
+        function updateChartRealtime(chart, newValue) {
+            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            chart.data.labels.push(now);
+            chart.data.datasets[0].data.push(parseFloat(newValue));
+            if (chart.data.labels.length > maxDataPoints) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+            }
+            chart.update();
+        }
+
+        // ====================================================
+        // 📥 HANDLER DATA WEBSOCKET INTERAKTIF
+        // ====================================================
+        socket.on('sensorData', (data) => {
+            const topik = data.topik_mqtt;
+            const nilai = data.nilai_sensor;
+
+            if (topik === 'gerimis/suhu') {
+                document.getElementById('badge-suhu').innerText = `${nilai}°C`;
+                updateChartRealtime(chartSuhu, nilai);
+            } 
+            else if (topik === 'gerimis/kelembapan') {
+                document.getElementById('badge-kelembapan').innerText = `${nilai}%`;
+                updateChartRealtime(chartKelembapan, nilai);
+            } 
+            else if (topik === 'gerimis/status') {
+                const elStatus = document.getElementById('ui-status');
+                const iconStatus = document.getElementById('weather-icon');
+                elStatus.innerText = nilai;
+                if (nilai === 'Kering') {
+                    elStatus.className = "text-2xl font-bold tracking-wide text-amber-400";
+                    iconStatus.innerText = "☀️";
+                } else if (nilai === 'Gerimis') {
+                    elStatus.className = "text-2xl font-bold tracking-wide text-sky-400";
+                    iconStatus.innerText = "🌦️";
+                } else {
+                    elStatus.className = "text-2xl font-bold tracking-wide text-blue-500 animate-pulse";
+                    iconStatus.innerText = "🌧️";
+                }
+            }
+            else if (topik === 'gerimis/kelas_suhu') {
+                const elKelas = document.getElementById('ui-kelas');
+                const aiInd = document.getElementById('ai-indicator');
+                elKelas.innerText = nilai;
+                if (nilai === 'Normal') {
+                    elKelas.className = "text-2xl font-bold tracking-wide text-emerald-400";
+                    aiInd.className = "h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center font-bold text-lg text-emerald-400";
+                } else if (nilai === 'Peringatan') {
+                    elKelas.className = "text-2xl font-bold tracking-wide text-yellow-400";
+                    aiInd.className = "h-10 w-10 rounded-xl bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center font-bold text-lg text-yellow-400";
+                } else {
+                    elKelas.className = "text-2xl font-bold tracking-wide text-rose-500 animate-bounce";
+                    aiInd.className = "h-10 w-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center font-bold text-lg text-rose-500";
+                }
+            }
+            // 📡 HANDLER INTERPRETASI RADAR LINGKARAN FULL 360°
+            else if (topik === 'gerimis/jarak') {
                 const elJarak = document.getElementById('ui-jarak');
-                const jarakInt = parseInt(data.nilai_sensor);
+                const badgeJarak = document.getElementById('badge-jarak');
+                const radarCard = document.getElementById('radar-card');
+                const jarakInt = parseInt(nilai);
                 
+                currentJarak = jarakInt; 
+
                 if (jarakInt === 999) {
-                    elJarak.innerText = "Aman";
-                    elJarak.style.color = '#a6e3a1'; // Hijau jika jalanan kosong (999)
+                    elJarak.innerText = "999";
+                    badgeJarak.innerText = "Clear";
+                    badgeJarak.className = "text-xs font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                    radarCard.style.borderColor = "rgb(30, 41, 59)"; // Reset border panel
                 } else {
                     elJarak.innerText = jarakInt;
-                    // Ubah jadi merah jika jarak <= 20cm (kondisi bahaya/rem otomatis)
+
                     if (jarakInt <= 20) {
-                        elJarak.style.color = '#f38ba8'; 
+                        badgeJarak.innerText = "ALERT (CRASH)";
+                        badgeJarak.className = "text-xs font-mono font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse";
+                        radarCard.style.borderColor = "rgba(244, 63, 94, 0.4)"; // Panel ikut memerah menyala
+                    } else if (jarakInt <= 50) {
+                        badgeJarak.innerText = "Waspada";
+                        badgeJarak.className = "text-xs font-mono font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20";
+                        radarCard.style.borderColor = "rgba(251, 191, 36, 0.3)";
                     } else {
-                        elJarak.style.color = '#fab387'; 
+                        badgeJarak.innerText = "Objek Terdeteksi";
+                        badgeJarak.className = "text-xs font-mono font-bold px-2 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20";
+                        radarCard.style.borderColor = "rgb(30, 41, 59)";
                     }
                 }
             }
         });
     </script>
+    
+    <div class="hidden"><span id="ui-suhu"></span><span id="ui-kelembapan"></span></div>
 </body>
 </html>
