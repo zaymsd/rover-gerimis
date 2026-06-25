@@ -1,6 +1,6 @@
 <div align="center">
   
-# 🚙 Smart Rover G.E.R.I.M.I.S
+# 🚙 Rover G.E.R.I.M.I.S
 **Navigational Rover**
 
 [![ESP32](https://img.shields.io/badge/ESP32-000000?style=for-the-badge&logo=espressif&logoColor=white)](#)
