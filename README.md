@@ -9,7 +9,6 @@
 [![MQTT](https://img.shields.io/badge/MQTT-3C5280?style=for-the-badge&logo=mqtt&logoColor=white)](#)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](#)
 
-*Membawa Kecerdasan Buatan (AI) ke Ujung Ekosistem (Edge) melalui Mikrokontroler*
 
 </div>
 
@@ -54,7 +53,7 @@ Berikut adalah gambaran arsitektur sistem dan alur kerja (workflow) dari Smart R
 
 <div align="center">
   <img src="workflow/3.png" alt="Workflow 3" width="80%">
-  <p><em>Gambar 3: Implementasi Hardware & Pengujian</em></p>
+  <p><em>Gambar 3: Shecmatic</em></p>
 </div>
 
 ---
